@@ -72,7 +72,7 @@ void insertWord ( char* word, trieNode *rootNode ){
     current->fimDaPalavra = true;
 }
 
-void trie_busca_prefixo(trieNode *rootNode, char *prefixo, char **palavras){
+void trie_busca_prefixo ( trieNode *rootNode, char *prefixo, char **palavras ) {
     
     if ( !rootNode ){
         return;
@@ -99,21 +99,22 @@ void trie_busca_prefixo(trieNode *rootNode, char *prefixo, char **palavras){
     int num_PalavrasEncontradas = 0;
     
     if (findWord(prefixo, rootNode)){ //adiciona prefixo à lista
+        palavras = realloc(palavras, (num_PalavrasEncontradas + 1) * sizeof(char*)); // talvez precise especificar tipo para compilar
+        palavras[num_PalavrasEncontradas] = malloc(sizeof(prefixo) + 1);
+        strcpy(palavras[num_PalavrasEncontradas], prefixo);
         num_PalavrasEncontradas++;
-        char **palavras = realloc(palavras, num_PalavrasEncontradas * sizeof(char*)); // talvez precise especificar tipo para compilar
-        palavras[num_PalavrasEncontradas - 1] = malloc(sizeof(prefixo) + 1);
-        strcpy(palavras[num_PalavrasEncontradas - 1], prefixo);
     }
     
-    char auxStr[TAM_MAX_PAL] = malloc( (strlen(prefixo) + 1 ) * sizeof(char)); 
-    strcpy(auxStr, prefixo);
+    char *auxStr = malloc( (strlen(prefixo) + 1 ) * sizeof(char)); 
+    strcpy(auxStr, prefixo); // precisa garantir que a palavra tem o '\0'
+
     
     // current =  nó da ultima letra do prefixo
     checkerDFS(current, auxStr, palavras, num_PalavrasEncontradas);
     
 }
 
-void checkerDFS(trieNode* node, char *auxStr, char **palavras, int *num_PalavrasEncontradas) {
+void checkerDFS ( trieNode* node, char *auxStr, char **palavras, int *num_PalavrasEncontradas ) {
 
     if ( !node ){
         return;
@@ -121,12 +122,17 @@ void checkerDFS(trieNode* node, char *auxStr, char **palavras, int *num_Palavras
 
     bool children_visited[ALPHABET_SIZE] = { 0 };
     
-    if (node->fimDaPalavra){
+    if ( node->fimDaPalavra ) {
         // adiciona palavra a lista
     }
     
-    for( int i = 0; i < ALPHABET_SIZE; i++ ){
+    for ( int i = 0; i < ALPHABET_SIZE; i++ ){
+        char c = ( i + 'a' );
+        strcat(auxStr, c);
         trie_busca_prefixo(node->child[i], auxStr, palavras); // chama para cada filho
         children_visited[i] = true;
     }
+
+    return;
+    
 }
