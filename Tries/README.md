@@ -1,4 +1,6 @@
 # Trie — buscar_palavra e busca por prefixo
+## Arthur Ferreira Borges
+## Miguel Muller da Rosa
 
 ## 1. findWord (buscar_palavra)
 

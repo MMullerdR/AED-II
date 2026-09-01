@@ -1,7 +1,12 @@
+// Codigo de:
+// Arthur Ferreira Borges
+// Miguel Muller da Rosa
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+
 #define ALPHABET_SIZE 26
 #define TAM_MAX_PAL 50
 
