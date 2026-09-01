@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-
 #define ALPHABET_SIZE 26
 #define TAM_MAX_PAL 50
 
@@ -14,18 +13,34 @@ typedef struct trieNode{
 trieNode* createNode( void );
 bool findWord( char* word, trieNode *rootNode );
 void insertWord ( char* word, trieNode *rootNode );
-void trie_busca_prefixo(trieNode *root, char *prefixo, char **palavras);
+void trie_busca_prefixo(trieNode *root, char *prefixo, char ***palavras, int *num_PalavrasEncontradas);
+void checkerDFS(trieNode *node, char *auxStr, char ***palavras, int *num_PalavrasEncontradas, int nivel);
 
 int main(){
-
-    char* word = "batata";
-
+    char* word = "desatento";
     trieNode *root = createNode();
-    insertWord("batman", root);
+    insertWord("desatento", root);
+    insertWord("desanima", root);
+    insertWord("desanimar", root);
+    insertWord("desfaz", root);
+    insertWord("desfazer", root);
+    insertWord("descobri", root);
+    insertWord("descobrir", root);
+    bool isWordThere = findWord(word, root);
+    printf("Real ou faike: %d\n", isWordThere);
 
-    bool isWordFound = findWord(word, root);
-    printf("Real ou faike: %d\n", isWordFound);
+    char **palavras = NULL;
+    int num_PalavrasEncontradas = 0;
+    trie_busca_prefixo(root, "des", &palavras, &num_PalavrasEncontradas);
 
+    printf("Palavras com prefixo 'des':\n");
+    for (int i = 0; i < num_PalavrasEncontradas; i++){
+        printf("%s\n", palavras[i]);
+        free(palavras[i]);
+    }
+    free(palavras);
+
+    return 0;
 }
 
 trieNode* createNode( void ){
@@ -43,20 +58,16 @@ bool findWord( char* word, trieNode *rootNode ) {
     if ( len_word == 0 ) {
         return false;
     }
-
     trieNode *aux = rootNode;
     int i = 0;
-
     while ( i < len_word ) {
         int j = (int) word[i] - 'a';
         if ( !aux->child[j] )
             return false;
-
         aux = aux->child[j];
         i++;
     }
-
-    return true;
+    return aux->fimDaPalavra; // returna true so se for o fim da palavra
 }
 
 void insertWord ( char* word, trieNode *rootNode ){
@@ -72,67 +83,62 @@ void insertWord ( char* word, trieNode *rootNode ){
     current->fimDaPalavra = true;
 }
 
-void trie_busca_prefixo ( trieNode *rootNode, char *prefixo, char **palavras ) {
+void trie_busca_prefixo ( trieNode *rootNode, char *prefixo, char ***palavras, int *num_PalavrasEncontradas ) {
     
     if ( !rootNode ){
         return;
     }
-
     int len_prefixo = strlen( prefixo );
     
     if ( len_prefixo == 0 ) {
-        return false;
+        return; 
     }
 
     trieNode *current = rootNode;
-    int i = 0;
 
+    int i = 0;
     while ( i < len_prefixo ) { // avança todas as posicoes do prefixo
         int j = (int) prefixo[i] - 'a';
         if ( !current->child[j] )
             return;
-
         current = current->child[j];
         i++;
     }
-
-    int num_PalavrasEncontradas = 0;
     
-    if (findWord(prefixo, rootNode)){ //adiciona prefixo à lista
-        palavras = realloc(palavras, (num_PalavrasEncontradas + 1) * sizeof(char*)); // talvez precise especificar tipo para compilar
-        palavras[num_PalavrasEncontradas] = malloc(sizeof(prefixo) + 1);
-        strcpy(palavras[num_PalavrasEncontradas], prefixo);
-        num_PalavrasEncontradas++;
+    if ( current->fimDaPalavra ){ // adiciona o proprio prefixo à lista, se ele for uma palavra
+        *palavras = realloc(*palavras, (*num_PalavrasEncontradas + 1) * sizeof(char*));
+        (*palavras)[*num_PalavrasEncontradas] = malloc(strlen(prefixo) + 1);
+        strcpy((*palavras)[*num_PalavrasEncontradas], prefixo);
+        (*num_PalavrasEncontradas)++;
     }
     
-    char *auxStr = malloc( (strlen(prefixo) + 1 ) * sizeof(char)); 
-    strcpy(auxStr, prefixo); // precisa garantir que a palavra tem o '\0'
-
+    char auxStr[TAM_MAX_PAL];
+    strcpy(auxStr, prefixo); // garante o '\0' no fim do buffer
     
-    // current =  nó da ultima letra do prefixo
-    checkerDFS(current, auxStr, palavras, num_PalavrasEncontradas);
-    
+    // current = nó da ultima letra do prefixo
+    int nivel = len_prefixo - 1; // indice do ultimo caractere valido em auxStr
+    checkerDFS(current, auxStr, palavras, num_PalavrasEncontradas, nivel);
 }
 
-void checkerDFS ( trieNode* node, char *auxStr, char **palavras, int *num_PalavrasEncontradas ) {
-
+void checkerDFS ( trieNode* node, char *auxStr, char ***palavras, int *num_PalavrasEncontradas, int nivel ) {
     if ( !node ){
         return;
     }
-
-    bool children_visited[ALPHABET_SIZE] = { 0 };
-    
-    if ( node->fimDaPalavra ) {
-        // adiciona palavra a lista
-    }
     
     for ( int i = 0; i < ALPHABET_SIZE; i++ ){
-        char c = ( i + 'a' );
-        strcat(auxStr, c);
-        trie_busca_prefixo(node->child[i], auxStr, palavras); // chama para cada filho
-        children_visited[i] = true;
+        if ( node->child[i] ){
+            char caractereAtual = ( i + 'a' );
+            auxStr[nivel + 1] = caractereAtual;
+            auxStr[nivel + 2] = '\0';
+            
+            if ( node->child[i]->fimDaPalavra ){ // adiciona palavra a lista
+                *palavras = realloc(*palavras, (*num_PalavrasEncontradas + 1) * sizeof(char*));
+                (*palavras)[*num_PalavrasEncontradas] = malloc(strlen(auxStr) + 1);
+                strcpy((*palavras)[*num_PalavrasEncontradas], auxStr);
+                (*num_PalavrasEncontradas)++;
+            }
+            
+            checkerDFS(node->child[i], auxStr, palavras, num_PalavrasEncontradas, nivel + 1); // chamava trie_busca_prefixo por engano
+        }
     }
-
-    return;
-    
 }
